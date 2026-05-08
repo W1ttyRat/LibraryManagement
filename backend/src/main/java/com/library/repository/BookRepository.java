@@ -3,6 +3,8 @@ package com.library.repository;
 
 import java.util.List;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.data.jpa.repository.JpaRepository;
 import org.springframework.data.jpa.repository.Query;
 import org.springframework.data.repository.query.Param;
@@ -15,5 +17,5 @@ public interface BookRepository extends JpaRepository<Book,Integer>{
            "   OR LOWER(b.author.name) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
            "   OR LOWER(b.publisher.name) LIKE LOWER(CONCAT('%', :keyword, '%')) " +
            "   OR LOWER(b.category.name) LIKE LOWER(CONCAT('%', :keyword, '%'))")
-    List<Book> searchBooks(@Param("keyword") String keyword);
+    Page<Book> searchBooks(Pageable pageable, @Param("keyword") String keyword);
 }

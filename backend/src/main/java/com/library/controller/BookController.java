@@ -8,6 +8,8 @@ import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
 
+import org.springframework.data.domain.Page;
+import org.springframework.data.domain.Pageable;
 import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.CrossOrigin;
 import org.springframework.web.bind.annotation.DeleteMapping;
@@ -18,6 +20,7 @@ import org.springframework.web.bind.annotation.PutMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.bind.annotation.RestController;
+import org.springframework.web.bind.annotation.RequestBody;
 import org.springframework.web.multipart.MultipartFile;
 
 import com.library.model.Book;
@@ -27,6 +30,8 @@ import com.library.repository.BookRepository;
 import com.library.repository.BorrowRecordRepository;
 import com.library.repository.CategoryRepository;
 import com.library.repository.PublisherRepository;
+
+import com.library.DTO.BookRequestDto;
 
 @RestController
 @RequestMapping("/api/books")
@@ -55,12 +60,12 @@ public class BookController {
 
     // ✅ Get all books
     @GetMapping
-    public List<Book> getAllBooks() {
-        return bookRepository.findAll();
+    public Page<Book> getAllBooks(Pageable pageable) {
+        return bookRepository.findAll(pageable);
     }
     @GetMapping("/search")
-    public List<Book> searchBooks(@RequestParam("q") String keyword) {
-        return bookRepository.searchBooks(keyword);
+    public Page<Book> searchBooks(Pageable pageable, @RequestParam("q") String keyword) {
+        return bookRepository.searchBooks(pageable, keyword);
     }
     
     // ✅ Get single book (with borrow info)
@@ -107,6 +112,22 @@ public class BookController {
         return "Book added successfully!";
     }
 
+    @PostMapping("/listAdd")
+    public List<Book> addBooks(@RequestBody List<BookRequestDto> bookRequests) {
+        List<Book> books = bookRequests.stream().map(req -> {
+            Book book = new Book();
+            book.setTitle(req.getTitle());
+            book.setShelf(req.getShelf());
+            book.setDescription(req.getDescription());
+
+            setAuthorPublisherCategory(book, req.getAuthorId(), req.getPublisherId(), req.getCategoryId());
+
+            return book;
+        }).toList();
+
+        return bookRepository.saveAll(books);
+    }
+
     // ✅ Update book
     @PutMapping(value = "/{id}", consumes = {"multipart/form-data"})
     public String updateBook(@PathVariable int id,
@@ -138,6 +159,8 @@ public class BookController {
         bookRepository.deleteById(id);
         return "Book deleted successfully!";
     }
+
+
 
     // 🔧 Helper: assign related entities
     private Integer setAuthorPublisherCategory(Book book, Integer authorId, Integer publisherId, Integer categoryId) {

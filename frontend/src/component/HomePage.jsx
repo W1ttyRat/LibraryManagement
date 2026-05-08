@@ -5,23 +5,63 @@ import "./HomePage.css"; // your custom CSS
 
 function HomePage() {
   const [books, setBooks] = useState([]);
+  const [totalElements, setTotalElements] = useState(0);
+  const [totalPages, setTotalPages] = useState(0);
+  const [page, setPage] = useState(0);
+  const [size, setSize] = useState(3);
+  const [sort, setSort] = useState("id,asc");
 
   useEffect(() => {
-    async function fetchBooks() {
+    const params = new URLSearchParams({
+      page: String(page),
+      size: String(size),
+      sort,
+    });
+
+    /*async function fetchBooks() {
       try {
-        const data = await fetch("http://localhost:8081/api/books");
+        const data = await fetch(`http://localhost:8081/api/books?${params.toString()}`);
         const fetchData = await data.json();
+        setBooks(fetchData.content);
+        setTotalElements(fetchData.totalElements);
+        setTotalPages(fetchData.totalPages);
+        // console.log("Fetched books:", fetchData);
         const sorted = fetchData.sort(
           (a, b) => new Date(b.createdAt) - new Date(a.createdAt)
         );
+
         // Limit to max 10 books
-        setBooks(sorted.slice(0, 10));
+        // setBooks(sorted.slice(0, 10));
       } catch (e) {
         console.error("Unable to fetch", e);
       }
-    }
-    fetchBooks();
-  }, []);
+    } 
+    fetchBooks(); */
+
+    fetch("http://localhost:8081/api/books?" + params.toString())
+      .then((res) => {
+        if (!res.ok) throw new Error("error: " + res.status);
+        return res.json();
+      })
+      .then((data) => {
+        const content = Array.isArray(data) ? data : (data?.content || []);
+        setBooks(content);
+        setTotalElements(Array.isArray(data) ? content.length : (data?.totalElements || 0));
+        setTotalPages(Array.isArray(data) ? 1 : (data?.totalPages || 1));
+        // console.log("Fetched books:", data);
+      })
+      .catch((e) => console.error("Unable to fetch books", e));
+  }, [page, size, sort]);
+
+  const sizeHandler = (newSize) => {
+    setSize(newSize);
+    setPage(0);
+  };
+
+  const sortHandler = (newSort) => {
+    setSort(newSort);
+    setPage(0);
+  };
 
   return (
     <div
@@ -30,7 +70,30 @@ function HomePage() {
         minHeight: "100vh",
         padding: "20px",
       }}
-    >
+    > 
+
+      <div>
+        {page* size + 1}-{(page + 1) * size > totalElements ? totalElements : (page + 1) * size}
+        kuvatud {totalElements}-st
+      </div>
+
+      <select defaultValue={3} onChange={(e) => sizeHandler(Number(e.target.value))}>
+        <option>2</option>
+        <option>3</option>
+        <option>4</option>
+      </select>
+
+      <br /><br />
+
+      <button onClick={() => sortHandler("id,asc")}>Sorteeri id,asc</button>
+      <button onClick={() => sortHandler("id,desc")}>Sorteeri id,desc</button>
+
+      <br /><br />
+
+      <button disabled={page === 0} onClick={() => setPage(page - 1)}>Eelmine</button>
+      <span>{page + 1}</span>
+      <button disabled={page+1 === totalPages} onClick={() => setPage(page + 1)}>Järgmine</button>
+
       <h2
         className="text-center mb-4"
         style={{ color: "#000", textShadow: "1px 1px 2px #f5f5f5ff" }}
