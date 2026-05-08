@@ -91,6 +91,8 @@ public class BookController {
         return ResponseEntity.ok(response);
     }
 
+
+
     // ✅ Add book (with optional image)
     @PostMapping(consumes = {"multipart/form-data"})
     public String addBook(@RequestParam String title,
